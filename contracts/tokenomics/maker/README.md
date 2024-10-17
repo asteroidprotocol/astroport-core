@@ -1,6 +1,6 @@
-# Astroport Maker
+# Asteroid Maker
 
-The Maker contract collects part of Astroport's pair fees (according to the factory's `maker_fee`). The accrued fees are swapped to ASTRO and then send to stakers and governance (according to the `governance_percent`).
+The Maker contract collects Asteroid's fees. The accrued fees are swapped to ROIDS and then sent back to the Hub to be burned.
 
 ---
 
@@ -118,6 +118,24 @@ Returns token balances for each specified asset held by the Maker.
       {
         "native_token": {
           "denom": "uusd"
+        }
+      }
+    ]
+  }
+}
+```
+
+## Collect for ATOM
+
+```
+{
+  "collect": {
+    "assets": [
+      {
+        "info": {
+          "native_token": {
+            "denom": "ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9"
+          }
         }
       }
     ]
