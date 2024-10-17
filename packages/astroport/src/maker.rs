@@ -14,30 +14,14 @@ pub struct Config {
     pub owner: Addr,
     /// The factory contract address
     pub factory_contract: Addr,
-    /// The xASTRO staking contract address.
-    pub staking_contract: Option<Addr>,
+    /// The Asteroid bridge contract
+    pub asteroid_contract: Addr,
     /// Default bridge asset (Terra1 - LUNC, Terra2 - LUNA, etc.)
     pub default_bridge: Option<AssetInfo>,
-    /// The vxASTRO fee distributor contract address
-    pub governance_contract: Option<Addr>,
-    /// The percentage of fees that go to the vxASTRO fee distributor
-    pub governance_percent: Uint64,
-    /// The ASTRO token asset info
-    pub astro_token: AssetInfo,
+    /// The ROIDS token asset info
+    pub roids_token: AssetInfo,
     /// The max spread allowed when swapping fee tokens to ASTRO
     pub max_spread: Decimal,
-    /// The flag which determines whether accrued ASTRO from fee swaps is being distributed or not
-    pub rewards_enabled: bool,
-    /// The number of blocks over which ASTRO that accrued pre-upgrade will be distributed
-    pub pre_upgrade_blocks: u64,
-    /// The last block until which pre-upgrade ASTRO will be distributed
-    pub last_distribution_block: u64,
-    /// The remainder of pre-upgrade ASTRO to distribute
-    pub remainder_reward: Uint128,
-    /// The amount of collected ASTRO before enabling rewards distribution
-    pub pre_upgrade_astro_amount: Uint128,
-    /// Parameters that describe the second receiver of fees
-    pub second_receiver_cfg: Option<SecondReceiverConfig>,
     /// If set defines the period when maker collect can be called
     pub collect_cooldown: Option<u64>,
 }
@@ -49,20 +33,14 @@ pub struct InstantiateMsg {
     pub owner: String,
     /// Default bridge asset (Terra1 - LUNC, Terra2 - LUNA, etc.)
     pub default_bridge: Option<AssetInfo>,
-    /// The ASTRO token asset info
-    pub astro_token: AssetInfo,
+    /// The ROIDS token asset info
+    pub roids_token: AssetInfo,
     /// The factory contract address
     pub factory_contract: String,
-    /// The xASTRO staking contract address. If None then governance_contract must be set with 100% fee.
-    pub staking_contract: Option<String>,
-    /// The governance contract address (fee distributor for vxASTRO)
-    pub governance_contract: Option<String>,
-    /// The percentage of fees that go to governance_contract
-    pub governance_percent: Option<Uint64>,
+    /// The Asteroid bridge contract
+    pub asteroid_contract: String,
     /// The maximum spread used when swapping fee tokens to ASTRO
     pub max_spread: Option<Decimal>,
-    /// The second receiver parameters of fees
-    pub second_receiver_params: Option<SecondReceiverParams>,
     /// If set defines the period when maker collect can be called
     pub collect_cooldown: Option<u64>,
 }
@@ -79,22 +57,16 @@ pub enum ExecuteMsg {
     UpdateConfig {
         /// The factory contract address
         factory_contract: Option<String>,
-        /// The xASTRO staking contract address
-        staking_contract: Option<String>,
-        /// The governance contract address (fee distributor for vxASTRO)
-        governance_contract: Option<UpdateAddr>,
-        /// The percentage of fees that go to governance_contract
-        governance_percent: Option<Uint64>,
         /// Basic chain asset (Terra1 - LUNC, Terra2 - LUNA, etc.)
         basic_asset: Option<AssetInfo>,
         /// The maximum spread used when swapping fee tokens to ASTRO
         max_spread: Option<Decimal>,
-        /// The second receiver parameters of fees
-        second_receiver_params: Option<SecondReceiverParams>,
         /// Defines the period when maker collect can be called
         collect_cooldown: Option<u64>,
-        /// The ASTRO token asset info
-        astro_token: Option<AssetInfo>,
+        /// The ROIDS token asset info
+        roids_token: Option<AssetInfo>,
+        /// The Asteroid bridge contract
+        asteroid_contract: Option<String>,
     },
     /// Add bridge tokens used to swap specific fee tokens to ASTRO (effectively declaring a swap route)
     UpdateBridges {
@@ -116,8 +88,6 @@ pub enum ExecuteMsg {
     DropOwnershipProposal {},
     /// Claims contract ownership
     ClaimOwnership {},
-    /// Enables the distribution of current fees accrued in the contract over "blocks" number of blocks
-    EnableRewards { blocks: u64 },
 }
 
 /// This structure describes the query functions available in the contract.
@@ -141,24 +111,14 @@ pub struct ConfigResponse {
     pub owner: Addr,
     /// Default bridge (Terra1 - LUNC, Terra2 - LUNA, etc.)
     pub default_bridge: Option<AssetInfo>,
-    /// The ASTRO token asset info
-    pub astro_token: AssetInfo,
+    /// The ROIDS token asset info
+    pub roids_token: AssetInfo,
     /// The factory contract address
     pub factory_contract: Addr,
-    /// The xASTRO staking contract address
-    pub staking_contract: Option<Addr>,
-    /// The governance contract address (fee distributor for vxASTRO stakers)
-    pub governance_contract: Option<Addr>,
-    /// The percentage of fees that go to governance_contract
-    pub governance_percent: Uint64,
-    /// The maximum spread used when swapping fee tokens to ASTRO
+    /// The Asteroid bridge contract
+    pub asteroid_contract: Addr,
+    /// The maximum spread used when swapping fee tokens to ROIDS
     pub max_spread: Decimal,
-    /// The remainder ASTRO tokens (accrued before the Maker is upgraded) to be distributed to xASTRO stakers
-    pub remainder_reward: Uint128,
-    /// The amount of ASTRO tokens accrued before upgrading the Maker implementation and enabling reward distribution
-    pub pre_upgrade_astro_amount: Uint128,
-    /// Parameters that describe the second receiver of fees
-    pub second_receiver_cfg: Option<SecondReceiverConfig>,
 }
 
 /// A custom struct used to return multiple asset balances.
@@ -170,8 +130,7 @@ pub struct BalancesResponse {
 /// This structure describes a migration message.
 #[cw_serde]
 pub struct MigrateMsg {
-    pub second_receiver_params: Option<SecondReceiverParams>,
-    pub collect_cooldown: Option<u64>,
+    
 }
 
 /// This struct holds parameters to help with swapping a specific amount of a fee token to ASTRO.
@@ -182,24 +141,3 @@ pub struct AssetWithLimit {
     /// The amount of tokens to swap
     pub limit: Option<Uint128>,
 }
-
-/// This structure describes the parameters for updating the second receiver of fees.
-#[cw_serde]
-pub struct SecondReceiverParams {
-    /// The second fee receiver
-    pub second_fee_receiver: String,
-    /// The percentage of fees that go to the second fee receiver
-    pub second_receiver_cut: Uint64,
-}
-
-/// This structure stores the parameters for the second receiver of fees.
-#[cw_serde]
-pub struct SecondReceiverConfig {
-    /// The second fee receiver contract address
-    pub second_fee_receiver: Addr,
-    /// The percentage of fees that go to the second fee receiver
-    pub second_receiver_cut: Uint64,
-}
-
-/// The maximum allowed second receiver share (percents)
-pub const MAX_SECOND_RECEIVER_CUT: Uint64 = Uint64::new(50);

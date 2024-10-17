@@ -6,8 +6,7 @@ use cw20::Cw20ExecuteMsg;
 
 use astroport::asset::{Asset, AssetInfo, PairInfo};
 use astroport::maker::{
-    Config, ExecuteMsg, SecondReceiverConfig, SecondReceiverParams, COOLDOWN_LIMITS,
-    MAX_SECOND_RECEIVER_CUT,
+    Config, ExecuteMsg, COOLDOWN_LIMITS,
 };
 use astroport::pair::Cw20HookMsg;
 use astroport::querier::query_pair_info;
@@ -230,33 +229,6 @@ pub fn build_send_msg(
             coins(asset.amount.u128(), denom),
         )?)),
     }
-}
-
-/// Updates the parameters that describe the second receiver of fees
-pub fn update_second_receiver_cfg(
-    deps: Deps,
-    cfg: &mut Config,
-    params: &Option<SecondReceiverParams>,
-) -> StdResult<()> {
-    if let Some(params) = params {
-        if params.second_receiver_cut > MAX_SECOND_RECEIVER_CUT
-            || params.second_receiver_cut.is_zero()
-        {
-            return Err(StdError::generic_err(format!(
-                "Incorrect second receiver percent of its share. Should be in range: 0 < {} <= {}",
-                params.second_receiver_cut, MAX_SECOND_RECEIVER_CUT
-            )));
-        };
-
-        cfg.second_receiver_cfg = Some(SecondReceiverConfig {
-            second_fee_receiver: deps
-                .api
-                .addr_validate(params.second_fee_receiver.as_str())?,
-            second_receiver_cut: params.second_receiver_cut,
-        });
-    }
-
-    Ok(())
 }
 
 /// Validate cooldown value is within the allowed range
